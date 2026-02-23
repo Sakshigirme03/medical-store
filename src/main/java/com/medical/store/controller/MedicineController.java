@@ -1,10 +1,11 @@
 package com.medical.store.controller;
 
-import com.medical.store.entity.Medicine;
-import com.medical.store.repository.MedicineRepository;
-import org.springframework.web.bind.annotation.*;
-import jakarta.validation.Valid;
 import com.medical.store.dto.MedicineDTO;
+import com.medical.store.entity.Medicine;
+import com.medical.store.response.ApiResponse;
+import com.medical.store.service.MedicineService;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -12,15 +13,19 @@ import java.util.List;
 @RequestMapping("/medicines")
 public class MedicineController {
 
-    private final MedicineRepository medicineRepository;
+    private final MedicineService medicineService;
 
-    public MedicineController(MedicineRepository medicineRepository) {
-        this.medicineRepository = medicineRepository;
+    public MedicineController(MedicineService medicineService) {
+        this.medicineService = medicineService;
     }
 
+    // 🔹 Get All Medicines (Pagination)
     @GetMapping
-    public List<MedicineDTO> getAllMedicines() {
-        return medicineRepository.findAll()
+    public ApiResponse<List<MedicineDTO>> getAllMedicines(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+
+        List<MedicineDTO> medicines = medicineService.getAllMedicines(page, size)
                 .stream()
                 .map(m -> new MedicineDTO(
                         m.getId(),
@@ -31,18 +36,34 @@ public class MedicineController {
                         m.isAvailable()
                 ))
                 .toList();
+
+        return new ApiResponse<>(
+                "SUCCESS",
+                "Medicines fetched successfully",
+                medicines
+        );
     }
+
+    // 🔹 Add Medicine
     @PostMapping
-    public Medicine addMedicine(@Valid @RequestBody Medicine medicine) {
-        return medicineRepository.save(medicine);
+    public ApiResponse<Medicine> addMedicine(@Valid @RequestBody Medicine medicine) {
+
+        Medicine saved = medicineService.saveMedicine(medicine);
+
+        return new ApiResponse<>(
+                "SUCCESS",
+                "Medicine added successfully",
+                saved
+        );
     }
+
+    // 🔹 Get Medicine By ID
     @GetMapping("/{id}")
-    public MedicineDTO getMedicineById(@PathVariable Long id) {
+    public ApiResponse<MedicineDTO> getMedicineById(@PathVariable Long id) {
 
-        Medicine medicine = medicineRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Medicine not found"));
+        Medicine medicine = medicineService.getMedicineById(id);
 
-        return new MedicineDTO(
+        MedicineDTO dto = new MedicineDTO(
                 medicine.getId(),
                 medicine.getName(),
                 medicine.getManufacturer(),
@@ -50,27 +71,38 @@ public class MedicineController {
                 medicine.getQuantity(),
                 medicine.isAvailable()
         );
+
+        return new ApiResponse<>(
+                "SUCCESS",
+                "Medicine fetched successfully",
+                dto
+        );
     }
+
+    // 🔹 Update Medicine
     @PutMapping("/{id}")
-    public Medicine updateMedicine(@PathVariable Long id, @Valid @RequestBody Medicine updatedMedicine) {
-        Medicine existingMedicine = medicineRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Medicine not found"));
+    public ApiResponse<Medicine> updateMedicine(@PathVariable Long id,
+                                                @Valid @RequestBody Medicine updatedMedicine) {
 
-        existingMedicine.setName(updatedMedicine.getName());
-        existingMedicine.setManufacturer(updatedMedicine.getManufacturer());
-        existingMedicine.setPrice(updatedMedicine.getPrice());
-        existingMedicine.setQuantity(updatedMedicine.getQuantity());
+        Medicine updated = medicineService.updateMedicine(id, updatedMedicine);
 
-        return medicineRepository.save(existingMedicine);
+        return new ApiResponse<>(
+                "SUCCESS",
+                "Medicine updated successfully",
+                updated
+        );
     }
+
+    // 🔹 Delete Medicine
     @DeleteMapping("/{id}")
-    public String deleteMedicine(@PathVariable Long id) {
+    public ApiResponse<String> deleteMedicine(@PathVariable Long id) {
 
-        Medicine medicine = medicineRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Medicine not found"));
+        medicineService.deleteMedicine(id);
 
-        medicineRepository.delete(medicine);
-
-        return "Medicine deleted successfully";
+        return new ApiResponse<>(
+                "SUCCESS",
+                "Medicine deleted successfully",
+                null
+        );
     }
 }
