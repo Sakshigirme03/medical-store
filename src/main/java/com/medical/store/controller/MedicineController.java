@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3002"})
 @RestController
 @RequestMapping("/medicines")
 public class MedicineController {
@@ -19,22 +20,13 @@ public class MedicineController {
         this.medicineService = medicineService;
     }
 
-    // 🔹 Get All Medicines (Pagination)
+    // ================= GET ALL MEDICINES =================
     @GetMapping
-    public ApiResponse<List<MedicineDTO>> getAllMedicines(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
+    public ApiResponse<List<MedicineDTO>> getAllMedicines() {
 
-        List<MedicineDTO> medicines = medicineService.getAllMedicines(page, size)
+        List<MedicineDTO> medicines = medicineService.getAllMedicines()
                 .stream()
-                .map(m -> new MedicineDTO(
-                        m.getId(),
-                        m.getName(),
-                        m.getManufacturer(),
-                        m.getPrice(),
-                        m.getQuantity(),
-                        m.isAvailable()
-                ))
+                .map(this::convertToDTO)
                 .toList();
 
         return new ApiResponse<>(
@@ -44,9 +36,40 @@ public class MedicineController {
         );
     }
 
-    // 🔹 Add Medicine
+    // ================= SEARCH MEDICINES =================
+    @GetMapping("/search")
+    public ApiResponse<List<MedicineDTO>> searchMedicines(
+            @RequestParam String name) {
+
+        List<MedicineDTO> medicines = medicineService.searchByName(name)
+                .stream()
+                .map(this::convertToDTO)
+                .toList();
+
+        return new ApiResponse<>(
+                "SUCCESS",
+                medicines.isEmpty() ? "Medicine not found" : "Medicine found",
+                medicines
+        );
+    }
+
+    // ================= GET MEDICINE BY ID =================
+    @GetMapping("/{id}")
+    public ApiResponse<MedicineDTO> getMedicineById(@PathVariable Long id) {
+
+        Medicine medicine = medicineService.getMedicineById(id);
+
+        return new ApiResponse<>(
+                "SUCCESS",
+                "Medicine fetched successfully",
+                convertToDTO(medicine)
+        );
+    }
+
+    // ================= ADD MEDICINE =================
     @PostMapping
-    public ApiResponse<Medicine> addMedicine(@Valid @RequestBody Medicine medicine) {
+    public ApiResponse<Medicine> addMedicine(
+            @Valid @RequestBody Medicine medicine) {
 
         Medicine saved = medicineService.saveMedicine(medicine);
 
@@ -57,32 +80,11 @@ public class MedicineController {
         );
     }
 
-    // 🔹 Get Medicine By ID
-    @GetMapping("/{id}")
-    public ApiResponse<MedicineDTO> getMedicineById(@PathVariable Long id) {
-
-        Medicine medicine = medicineService.getMedicineById(id);
-
-        MedicineDTO dto = new MedicineDTO(
-                medicine.getId(),
-                medicine.getName(),
-                medicine.getManufacturer(),
-                medicine.getPrice(),
-                medicine.getQuantity(),
-                medicine.isAvailable()
-        );
-
-        return new ApiResponse<>(
-                "SUCCESS",
-                "Medicine fetched successfully",
-                dto
-        );
-    }
-
-    // 🔹 Update Medicine
+    // ================= UPDATE MEDICINE =================
     @PutMapping("/{id}")
-    public ApiResponse<Medicine> updateMedicine(@PathVariable Long id,
-                                                @Valid @RequestBody Medicine updatedMedicine) {
+    public ApiResponse<Medicine> updateMedicine(
+            @PathVariable Long id,
+            @Valid @RequestBody Medicine updatedMedicine) {
 
         Medicine updated = medicineService.updateMedicine(id, updatedMedicine);
 
@@ -93,7 +95,7 @@ public class MedicineController {
         );
     }
 
-    // 🔹 Delete Medicine
+    // ================= DELETE MEDICINE =================
     @DeleteMapping("/{id}")
     public ApiResponse<String> deleteMedicine(@PathVariable Long id) {
 
@@ -103,6 +105,18 @@ public class MedicineController {
                 "SUCCESS",
                 "Medicine deleted successfully",
                 null
+        );
+    }
+
+    // ================= DTO CONVERTER =================
+    private MedicineDTO convertToDTO(Medicine medicine) {
+        return new MedicineDTO(
+                medicine.getId(),
+                medicine.getName(),
+                medicine.getManufacturer(),
+                medicine.getPrice(),
+                medicine.getQuantity(),
+                medicine.isAvailable()
         );
     }
 }

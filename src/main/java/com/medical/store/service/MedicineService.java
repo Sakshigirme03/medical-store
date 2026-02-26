@@ -16,10 +16,18 @@ public class MedicineService {
         this.medicineRepository = medicineRepository;
     }
 
+    public List<Medicine> searchByName(String name) {
+        return medicineRepository.findByNameContainingIgnoreCase(name);
+    }
+
     public List<Medicine> getAllMedicines(int page, int size) {
         return medicineRepository
                 .findAll(PageRequest.of(page, size))
                 .getContent();
+    }
+
+    public List<Medicine> getAllMedicines() {
+        return medicineRepository.findAll();
     }
 
     public Medicine getMedicineById(Long id) {
