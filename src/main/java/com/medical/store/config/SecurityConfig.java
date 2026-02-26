@@ -77,7 +77,9 @@ public class SecurityConfig {
         configuration.setAllowedOrigins(
                 List.of("http://localhost:3000",
                         "http://localhost:3001",
-                        "http://localhost:3002")
+                        "http://localhost:3002",
+                        "https://omsai-medical-frontend.vercel.app"
+                )
         );
         configuration.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
